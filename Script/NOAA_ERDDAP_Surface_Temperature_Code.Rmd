@@ -1,0 +1,69 @@
+---
+title: "Surface_Temperature_NOAA"
+author: "Cindy Fajardo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.path = "../Output/")
+```
+
+# Libraries
+```{r, Libraries}
+library("rerddap")
+library("tidyverse")
+library("tidync")
+library("doParallel")
+library(lubridate)
+library(patchwork)
+library(viridis)
+library(here)
+library(kableExtra)
+library(weathermetrics)
+```
+
+# NOAA Website
+```{r, NOAA Website}
+####This tells R to use NOAA designated website and what data set to use#####
+rerddap::info(datasetid = "noaa_psl_675a_3cea_522e", url = "https://upwell.pfeg.noaa.gov/erddap")
+```
+# Pull Data From NOAA
+```{r, Pull NOAA Data}
+sci_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e", 
+                   url = "https://upwell.pfeg.noaa.gov/erddap", 
+                   time = c("2022-01-01", "2022-12-31"),
+                   latitude =  c(34.1,34.1),
+                   longitude = c(240.1,240.1),
+                   fields = "air")$data %>% 
+  mutate(time = as.Date(stringr::str_remove(time, "T00:00:00Z")),
+         air_c = kelvin.to.celsius(air)) %>% 
+  select(longitude, latitude, time, air_c) %>% 
+  na.omit()%>%
+  mutate(month = month(time), # extract the month
+         year = year(time),
+         site = "Santa Cruz Island",
+         season  = case_when( # make a season
+           month %in% c(12,1,2) ~ "Winter",
+           month %in% c(3,4,5) ~ "Spring",
+           month %in% c(6,7,8) ~ "Summer",
+           month %in% c(9,10,11) ~ "Fall"
+         ),
+         season = factor(season),
+         season = fct_relevel(season, c("Winter","Spring","Summer","Fall")))
+```
+
+# Summarize Data
+```{r, Summarize Data}
+sci_surface_temp %>%
+  group_by(season)%>%
+  summarise(temp.mean = mean(air_c, na.rm = TRUE),
+            temp.max = max(air_c, na.rm = TRUE),
+            temp.min = min(air_c, na.rm = TRUE)) %>% 
+  kbl()%>% #make a table
+  kable_styling(full_width = F, font_size = 15)
+```
+
