@@ -31,8 +31,8 @@ library(weathermetrics)
 ####This tells R to use NOAA designated website and what data set to use#####
 rerddap::info(datasetid = "noaa_psl_675a_3cea_522e", url = "https://upwell.pfeg.noaa.gov/erddap")
 ```
-# Pull Data From NOAA
-```{r, Pull NOAA Data}
+# Pull SCI Data From NOAA
+```{r, Pull SCI NOAA Data}
 sci_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e", 
                    url = "https://upwell.pfeg.noaa.gov/erddap", 
                    time = c("2022-01-01", "2022-12-31"),
@@ -56,14 +56,86 @@ sci_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e",
          season = fct_relevel(season, c("Winter","Spring","Summer","Fall")))
 ```
 
-# Summarize Data
-```{r, Summarize Data}
+# Summarize SCI Data
+```{r, Summarize SCI Data}
 sci_surface_temp %>%
   group_by(season)%>%
-  summarise(temp.mean = mean(air_c, na.rm = TRUE),
-            temp.max = max(air_c, na.rm = TRUE),
-            temp.min = min(air_c, na.rm = TRUE)) %>% 
+  summarise(Temp.mean = mean(air_c, na.rm = TRUE),
+            Temp.max = max(air_c, na.rm = TRUE),
+            Temp.min = min(air_c, na.rm = TRUE)) %>% 
   kbl()%>% #make a table
   kable_styling(full_width = F, font_size = 15)
+```
+
+# Pull CNM Data From NOAA
+```{r, Pull CNM Data}
+cnm_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e", 
+                   url = "https://upwell.pfeg.noaa.gov/erddap", 
+                   time = c("2022-01-01", "2022-12-31"),
+                   latitude =  c(32.7,32.7),
+                   longitude = c(242.8,242.8),
+                   fields = "air")$data %>% 
+  mutate(time = as.Date(stringr::str_remove(time, "T00:00:00Z")),
+         air_c = kelvin.to.celsius(air)) %>% 
+  select(longitude, latitude, time, air_c) %>% 
+  na.omit()%>%
+  mutate(month = month(time), # extract the month
+         year = year(time),
+         site = "Cabrillo National Monument",
+         season  = case_when( # make a season
+           month %in% c(12,1,2) ~ "Winter",
+           month %in% c(3,4,5) ~ "Spring",
+           month %in% c(6,7,8) ~ "Summer",
+           month %in% c(9,10,11) ~ "Fall"
+         ),
+         season = factor(season),
+         season = fct_relevel(season, c("Winter","Spring","Summer","Fall")))
+```
+
+# Summarize CNM Data
+```{r, Summarize CNM Data}
+cnm_surface_temp %>%
+  group_by(season)%>%
+  summarise(Temp.mean = mean(air_c, na.rm = TRUE),
+            Temp.max = max(air_c, na.rm = TRUE),
+            Temp.min = min(air_c, na.rm = TRUE)) %>% 
+  kbl()%>% #make a table
+  kable_styling(full_width = F, font_size = 15)
+```
+
+# SCI Line Graph
+```{r}
+ggplot(sci_surface_temp, # data used is the sci_surface_temp we created
+       aes(x = time, #x axis is time
+           y = air_c))+ #y axis is sea surface temperature
+  labs(title = "Santa Cruz Island", #title
+       x = "Year", # label for x axis
+       y = "Aerial Surface Temperature, (C)", # label for y axis
+       color = "Season")+ # legend label
+  theme_bw()+
+  geom_line()+ # draw a line graph
+  geom_point(aes(color = season))+ # add points colored by seasons
+  scale_color_manual(values = c("blue",
+                                "green",
+                                "red",
+                                "orange"))
+```
+
+# CNM Line Graph
+```{r, CNM Line Graph}
+ggplot(cnm_surface_temp, # data used is the cnm_surface_temp we created
+       aes(x = time, #x axis is time
+           y = air_c))+ #y axis is sea surface temperature
+  labs(title = "Cabrillo National Monument", #title
+       x = "Year", # label for x axis
+       y = "Aerial Surface Temperature, (C)", # label for y axis
+       color = "Season")+ # legend label
+  theme_bw()+
+  geom_line()+ # draw a line graph
+  geom_point(aes(color = season))+ # add points colored by seasons
+  scale_color_manual(values = c("blue",
+                                "green",
+                                "red",
+                                "orange"))
 ```
 
