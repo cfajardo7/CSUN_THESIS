@@ -12,3 +12,132 @@ knitr::opts_chunk$set(echo = TRUE,
                       fig.path = "../Output/")
 ```
 
+# Libraries
+```{r}
+library("rerddap")
+library("tidyverse")
+library("tidync")
+library("doParallel")
+library(lubridate)
+library(patchwork)
+library(viridis)
+library(here)
+library(kableExtra)
+library(weathermetrics)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+library(emmeans)
+library(agricolae)
+```
+
+# Read in CSV
+```{r}
+cnm_size_density <- read_csv(here("Data","2023_03_CNM_Limpet_density_and_size.csv"))
+sci_size_density <- read_csv(here("Data","2023_05_SCI_Owl_Size.csv"))
+cnm_sci_join <- full_join(cnm_size_density,sci_size_density)
+```
+
+# Statistics
+```{r}
+mean(cnm_size_density$SL)
+mean(sci_size_density$SL)
+model1<-lm(SL~Site, data=cnm_sci_join)
+plot(model1)
+anova(model1)
+emmeans(model1, pairwise~"Site", adjust="Tukey")
+HSD.test(model1, "Site", console=TRUE)
+graphdata<-as.data.frame(emmeans(model1, "Site"))
+graphdata
+graphdata$tukey<- list("a","b")
+graphdata
+```
+
+# Anova Graphs
+```{r, one-way anova graph}
+ggplot(data=graphdata, aes(x=Site, y=emmean, fill=Site)) +
+  theme_bw() +
+  theme(axis.text.x=element_text(color="black", size=12),
+        axis.text.y=element_text(face="bold", color="black", size=9), 
+        axis.title.x = element_text(color="black", size=18, face="bold"), 
+        axis.title.y = element_text(color="black", size=12),
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank()) +
+  geom_bar(colour="black", fill="purple", width=0.5, stat="identity") + 
+  guides(fill="none") + 
+  ylab("Average Shell Length") +
+  xlab("Site") +
+  labs(title = "Average Shell Length in Owl Limpets in Different Sites", size=14)+
+  scale_x_discrete(labels=c("CNM_Zone_3" = "Cabrillo National Monument", "SCI_Tree_1" = "Santa Cruz Island")) +
+  geom_errorbar(aes(ymax=emmean +SE, ymin=emmean - SE), 
+                stat="identity", 
+                position=position_dodge(width=0.9), 
+                width=0.1)+ 
+  geom_text(aes(label=tukey), 
+            position = position_dodge(width=0.9), 
+            vjust=-2.7)
+```
+
+
+# T tests
+```{r}
+ftest <- var.test(SL ~ Site, data = cnm_sci_join)
+mytest <- t.test(SL ~ Site, data = cnm_sci_join)
+```
+
+# Density
+```{r}
+cnm_area <- 43 # area (m^2) that I surveyed at cabrillo
+sci_area <- 30 # area (m^2) that I surveyed at sci
+
+cnm_total_limpets <- nrow(cnm_size_density)# to count total number of limpets surveyed
+
+pop_density_cnm <- cnm_total_limpets/cnm_area #calculate population density # of limpet/m^2
+
+sci_total_limpets <- nrow(sci_size_density)# to count total number of limpets surveyed
+
+pop_density_sci <- sci_total_limpets/sci_area #calculate population density # of limpet/m^2
+
+
+```
+
+
+# Histograms
+```{r, CNM Size Distribution}
+cnm_size_density %>%
+  select(Limpet_No, SL) %>% 
+  ggplot( aes(x=SL)) +
+  geom_bar(fill="blue", 
+           alpha=1,
+           width = 0.2) +
+  theme(plot.title = element_text(size = 10),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8))+
+  scale_y_continuous(breaks = c(1,3,5,7,9))+
+  labs(x = "Shell Length (cm)",
+       y = "Owl Limpet Count")+
+  ggtitle("Owl Limpet Size Distribution at Cabrillo National Monument")+
+  theme_bw()
+```
+
+```{r}
+sci_size_density %>%
+  select(Limpet_No, SL) %>% 
+  ggplot( aes(x=SL)) +
+  geom_bar(fill="red", 
+           alpha=1,
+           width = 0.2) +
+  theme(plot.title = element_text(size = 10),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8))+
+  scale_y_continuous(breaks = c(1,3,5,7,9))+
+  labs(x = "Shell Length (cm)",
+       y = "Owl Limpet Count")+
+  ggtitle("Owl Limpet Size Distribution at Santa Cruz Island")+
+  theme_bw()
+```
+

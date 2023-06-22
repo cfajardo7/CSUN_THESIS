@@ -35,7 +35,7 @@ rerddap::info(datasetid = "noaa_psl_675a_3cea_522e", url = "https://upwell.pfeg.
 ```{r, Pull SCI NOAA Data}
 sci_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e", 
                    url = "https://upwell.pfeg.noaa.gov/erddap", 
-                   time = c("2022-01-01", "2022-12-31"),
+                   time = c("2020-01-01", "2022-12-31"),
                    latitude =  c(34.1,34.1),
                    longitude = c(240.1,240.1),
                    fields = "air")$data %>% 
@@ -59,7 +59,7 @@ sci_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e",
 # Summarize SCI Data
 ```{r, Summarize SCI Data}
 sci_surface_temp %>%
-  group_by(season)%>%
+  group_by(year, season)%>%
   summarise(Temp.mean = mean(air_c, na.rm = TRUE),
             Temp.max = max(air_c, na.rm = TRUE),
             Temp.min = min(air_c, na.rm = TRUE)) %>% 
@@ -71,7 +71,7 @@ sci_surface_temp %>%
 ```{r, Pull CNM Data}
 cnm_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e", 
                    url = "https://upwell.pfeg.noaa.gov/erddap", 
-                   time = c("2022-01-01", "2022-12-31"),
+                   time = c("2020-01-01", "2022-12-31"),
                    latitude =  c(32.7,32.7),
                    longitude = c(242.8,242.8),
                    fields = "air")$data %>% 
@@ -95,7 +95,9 @@ cnm_surface_temp<-griddap(datasetx = "noaa_psl_675a_3cea_522e",
 # Summarize CNM Data
 ```{r, Summarize CNM Data}
 cnm_surface_temp %>%
-  group_by(season)%>%
+  filter(year <= 2022,
+         year >=2020)%>% 
+  group_by(year, season)%>%
   summarise(Temp.mean = mean(air_c, na.rm = TRUE),
             Temp.max = max(air_c, na.rm = TRUE),
             Temp.min = min(air_c, na.rm = TRUE)) %>% 
@@ -105,7 +107,11 @@ cnm_surface_temp %>%
 
 # SCI Line Graph
 ```{r}
-ggplot(sci_surface_temp, # data used is the sci_surface_temp we created
+sci_filtered_temp <- sci_surface_temp %>%
+  filter(year <= 2022,
+         year >=2020)
+
+ggplot(sci_filtered_temp, # data used is the sci_surface_temp we created
        aes(x = time, #x axis is time
            y = air_c))+ #y axis is sea surface temperature
   labs(title = "Santa Cruz Island", #title
@@ -123,7 +129,11 @@ ggplot(sci_surface_temp, # data used is the sci_surface_temp we created
 
 # CNM Line Graph
 ```{r, CNM Line Graph}
-ggplot(cnm_surface_temp, # data used is the cnm_surface_temp we created
+cnm_filtered_temp <- cnm_surface_temp %>%
+  filter(year <= 2022,
+         year >=2020)
+
+ggplot(cnm_filtered_temp, # data used is the cnm_surface_temp we created
        aes(x = time, #x axis is time
            y = air_c))+ #y axis is sea surface temperature
   labs(title = "Cabrillo National Monument", #title
@@ -137,5 +147,51 @@ ggplot(cnm_surface_temp, # data used is the cnm_surface_temp we created
                                 "green",
                                 "red",
                                 "orange"))
+```
+
+# CNM Box plot
+```{r, cnm box plot}
+c <- cnm_filtered_temp %>%
+  ggplot(aes(x = as.factor(year), y = air_c, fill = season))+
+  geom_boxplot()+
+  labs(title = "Cabrillo National Monument",
+       fill = "Season",
+       x = "Year",
+       y = "Sea Surface Temperature (C)")+
+  theme(plot.title = element_text(size = 8),
+        axis.title.y = element_text(size = 6),
+        axis.title.x = element_text(size = 6),
+        axis.text.x = element_text(size = 4),
+        axis.text.y = element_text(size = 4))+
+  scale_color_viridis_d(option = "D")
+
+c
+```
+
+# SCI Box plot
+```{r}
+s <- sci_filtered_temp %>%
+  ggplot(aes(x = as.factor(year), y = air_c, fill = season))+
+  geom_boxplot()+
+  labs(title = "Santa Cruz Island",
+       fill = "Season",
+       x = "Year",
+       y = "Sea Surface Temperature (C)")+
+  theme(plot.title = element_text(size = 8),
+        axis.title.y = element_text(size = 6),
+        axis.title.x = element_text(size = 6),
+        axis.text.x = element_text(size = 4),
+        axis.text.y = element_text(size = 4))+
+  scale_color_viridis_d(option = "D")
+
+s
+```
+
+# Both boxplots
+```{r, both boxplot}
+s/c+
+  plot_layout(guides = 'collect')+
+  plot_annotation(title = 'Average Aerial Surface Temperature per Season 2020-2022',
+                  theme = theme(plot.title = element_text(size = 10)))
 ```
 
