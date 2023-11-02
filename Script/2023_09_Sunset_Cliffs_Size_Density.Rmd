@@ -1,0 +1,88 @@
+---
+title: "2023_09_Sunset_Cliffs_Size_Density"
+author: "Cindy Fajardo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.path = "../Output/")
+```
+
+#Libraries
+```{r, Libraries}
+library("rerddap")
+library("tidyverse")
+library("tidync")
+library("doParallel")
+library(lubridate)
+library(patchwork)
+library(viridis)
+library(here)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+library(emmeans)
+library(agricolae)
+```
+
+#Read in CSV
+```{r, read in CSV}
+sc_size_density <- read_csv(here("Data","2023_09_02_Sunset_Cliffs_Size_Den.csv"))
+```
+
+#Statistics
+```{r, stats}
+mean(sc_size_density$SL)
+```
+
+#Density
+```{r, density}
+sc_area <- 40 # area (m^2) that I surveyed at Sunset Cliffs
+sc_total_limpets <- nrow(sc_size_density)
+pop_density_sc <- sc_total_limpets/sc_area #calculate population density # of limpet/m^2
+```
+
+#Histogram
+```{r, sc histogram}
+hist_sc <- sc_size_density %>% #calling csv with shell length data
+  select(Limpet_no, SL) %>% #selecting limpet number to count and shell length
+  ggplot( aes(x=SL)) + #Sl on x, I am not selecting y so R can use limpet count for density plot
+  geom_bar(fill="orange",#color of bars
+           colour="black",#color of bar outline
+           alpha= 1,#transparency of bar
+           width = 1) + #size of bars
+  labs(title = "Owl Limpet Size Density at Sunset Cliffs, California",
+       x = "Shell Length (mm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
+  scale_y_continuous(breaks = c(2,4,6,8,10,12,14,16))+ #lines I want to show up on y axis
+  scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
+  geom_vline(xintercept = mean(sc_size_density$SL),
+             colour="green")+ #draw line where average lies on density
+  theme_modern_rc()#black background
+hist_sc
+```
+
+#Practice
+```{r, practice}
+sc_size_density %>% #calling csv with shell length data
+  select(Limpet_no, SL) %>%
+  ggplot( aes(x=SL)) +
+    geom_density(fill="orange", color="orange", alpha=0.8) +
+   labs(title = "Owl Limpet Size Density at Sunset Cliffs, California",
+       x = "Shell Length (mm)",
+       y = "Density")+
+  geom_vline(xintercept = mean(sc_size_density$SL),
+             colour= "purple")+
+    theme_modern_rc()
+```
+
