@@ -104,40 +104,50 @@ pop_density_sci <- sci_total_limpets/sci_area #calculate population density # of
 
 # Histograms
 ```{r, CNM Size Distribution}
-cnm_size_density %>%
+hist_cnm <- cnm_size_density %>%
   select(Limpet_No, SL) %>% 
   ggplot( aes(x=SL)) +
   geom_bar(fill="blue", 
            alpha=1,
            width = 0.2) +
-  theme(plot.title = element_text(size = 10),
+  labs(title = "Cabrillo National Monument",
+       x = "Shell Length (cm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
         axis.title.y = element_text(size = 8),
         axis.title.x = element_text(size = 8),
         axis.text.x = element_text(size = 7),
-        axis.text.y = element_text(size = 8))+
+        axis.text.y = element_text(size = 7))+
   scale_y_continuous(breaks = c(1,3,5,7,9))+
-  labs(x = "Shell Length (cm)",
-       y = "Owl Limpet Count")+
-  ggtitle("Owl Limpet Size Distribution at Cabrillo National Monument")+
-  theme_bw()
+  scale_x_continuous(breaks = c(2,4,6,8))+
+  geom_vline(xintercept = mean(cnm_size_density$SL))
 ```
 
 ```{r}
-sci_size_density %>%
+hist_sci <- sci_size_density %>%
   select(Limpet_No, SL) %>% 
   ggplot( aes(x=SL)) +
   geom_bar(fill="red", 
            alpha=1,
            width = 0.2) +
-  theme(plot.title = element_text(size = 10),
+   labs(title = "Santa Cruz Island",
+        x = "Shell Length (cm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
         axis.title.y = element_text(size = 8),
         axis.title.x = element_text(size = 8),
         axis.text.x = element_text(size = 7),
-        axis.text.y = element_text(size = 8))+
+        axis.text.y = element_text(size = 7))+
   scale_y_continuous(breaks = c(1,3,5,7,9))+
-  labs(x = "Shell Length (cm)",
-       y = "Owl Limpet Count")+
-  ggtitle("Owl Limpet Size Distribution at Santa Cruz Island")+
-  theme_bw()
+  scale_x_continuous(breaks = c(2,4,6,8))+
+  geom_vline(xintercept = mean(sci_size_density$SL))
+```
+
+# Patchwork of histograms
+```{r, Patchwork of histograms}
+hist_sci/hist_cnm+
+  plot_layout(guides = 'collect')+
+  plot_annotation(title = 'Owl Limpet Size Distribution at Santa Cruz Island and Cabrillo National Monument',
+                  theme = theme(plot.title = element_text(size = 11)))
 ```
 

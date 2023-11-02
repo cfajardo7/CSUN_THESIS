@@ -158,11 +158,11 @@ c <- cnm_filtered_temp %>%
        fill = "Season",
        x = "Year",
        y = "Sea Surface Temperature (C)")+
-  theme(plot.title = element_text(size = 8),
-        axis.title.y = element_text(size = 6),
-        axis.title.x = element_text(size = 6),
-        axis.text.x = element_text(size = 4),
-        axis.text.y = element_text(size = 4))+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
   scale_color_viridis_d(option = "D")
 
 c
@@ -177,11 +177,11 @@ s <- sci_filtered_temp %>%
        fill = "Season",
        x = "Year",
        y = "Sea Surface Temperature (C)")+
-  theme(plot.title = element_text(size = 8),
-        axis.title.y = element_text(size = 6),
-        axis.title.x = element_text(size = 6),
-        axis.text.x = element_text(size = 4),
-        axis.text.y = element_text(size = 4))+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
   scale_color_viridis_d(option = "D")
 
 s
