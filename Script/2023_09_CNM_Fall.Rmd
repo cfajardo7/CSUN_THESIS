@@ -1,0 +1,49 @@
+---
+title: "2023_09_CNM_Fall"
+author: "Cindy Fajardo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.path = "../Output/")
+```
+
+#Libraries
+```{r, Libraries}
+library("rerddap")
+library("tidyverse")
+library("tidync")
+library("doParallel")
+library(lubridate)
+library(patchwork)
+library(viridis)
+library(here)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+library(emmeans)
+library(agricolae)
+```
+
+#Read in CSV
+```{r, Read in CSV}
+cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
+```
+
+#Statistics
+```{r, Statistics}
+mean(X2023_09_CNM_OL_SL_Data$SL_mm)
+```
+
+#Density
+```{r, Density}
+cnm_area <- 140 # area (m^2) that I surveyed at Cabrillo National Monument Zone 3
+cnm_total_limpets <- nrow(X2023_09_CNM_OL_SL_Data)
+pop_density_cnm <- cnm_total_limpets/cnm_area #calculate population density # of limpet/m^2
+```
+
