@@ -28,6 +28,7 @@ library(ggplot2)
 library(hrbrthemes)
 library(emmeans)
 library(agricolae)
+library(vegan)
 ```
 
 #Read in CSV
@@ -35,15 +36,41 @@ library(agricolae)
 cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
 ```
 
-#Statistics
-```{r, Statistics}
-mean(X2023_09_CNM_OL_SL_Data$SL_mm)
+#Simple Statistics
+```{r, Simple Statistics}
+mean(cnm_shell_length$SL_mm)
+max(cnm_shell_length$SL_mm)
 ```
 
 #Density
 ```{r, Density}
 cnm_area <- 140 # area (m^2) that I surveyed at Cabrillo National Monument Zone 3
-cnm_total_limpets <- nrow(X2023_09_CNM_OL_SL_Data)
+cnm_total_limpets <- nrow(cnm_shell_length)
 pop_density_cnm <- cnm_total_limpets/cnm_area #calculate population density # of limpet/m^2
+
+```
+
+#Population Shell Length Distribution Graph
+```{r, Population Shell Length Distribution Graph}
+cnm_pop_density <- cnm_shell_length %>% #calling csv with shell length data
+  select(Limpet_No, SL_mm) %>% #selecting limpet number to count and shell length
+  ggplot( aes(x=SL_mm)) + #Sl on x, I am not selecting y so R can use limpet count for density plot
+  geom_bar(fill="purple",#color of bars
+           colour="black",#color of bar outline
+           alpha= 1,#transparency of bar
+           width = 1) + #size of bars
+  labs(title = "Size Distribution of Owl Limpet Population, Cabrillo National Monument",
+       x = "Shell Length (mm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
+  scale_y_continuous(breaks = c(2,4,6,8,10,12,14,16))+ #lines I want to show up on y axis
+  scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
+  geom_vline(xintercept = mean(cnm_shell_length$SL_mm),
+             colour="green")#draw line where average lies on density
+ cnm_pop_density
 ```
 
