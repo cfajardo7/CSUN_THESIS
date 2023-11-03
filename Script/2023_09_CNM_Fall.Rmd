@@ -40,6 +40,7 @@ cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
 ```{r, Simple Statistics}
 mean(cnm_shell_length$SL_mm)
 max(cnm_shell_length$SL_mm)
+min(cnm_shell_length$SL_mm)
 ```
 
 #Density
@@ -67,10 +68,41 @@ cnm_pop_density <- cnm_shell_length %>% #calling csv with shell length data
         axis.title.x = element_text(size = 8),
         axis.text.x = element_text(size = 7),
         axis.text.y = element_text(size = 7))+
-  scale_y_continuous(breaks = c(2,4,6,8,10,12,14,16))+ #lines I want to show up on y axis
   scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
   geom_vline(xintercept = mean(cnm_shell_length$SL_mm),
              colour="green")#draw line where average lies on density
  cnm_pop_density
+```
+
+#Size Distribution of Tagged Limpets
+```{r, Size Distribution of Tagged Limpets}
+tagged_limpets <- cnm_shell_length %>% #named new data frame using shell length data
+  filter(Tag_ID != 0) #filtered out non-tagged limpets
+tagged_limpets #calling data frame
+mean(tagged_limpets$SL_mm)
+```
+
+#Tagged Limpets Shell Length Distribution Graph
+```{r, Tagged Limpets Shell Length Distribution Graph}
+tagged_distribution <- tagged_limpets %>% #calling data frame with tagged limpets only
+  select(Limpet_No, SL_mm) %>% #selecting limpet number to count and shell length
+  ggplot( aes(x=SL_mm)) + #Sl on x, I am not selecting y so R can use limpet count for density plot
+  geom_bar(fill="blue",#color of bars
+           colour="black",#color of bar outline
+           alpha= 1,#transparency of bar
+           width = 1) + #size of bars
+  labs(title = "Size Distribution of Tagged Owl Limpets, Cabrillo National Monument",
+       x = "Shell Length (mm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
+  scale_y_continuous(breaks = c(0,2,4,6,8,10))+ #lines I want to show up on y axis
+  scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
+  geom_vline(xintercept = mean(tagged_limpets$SL_mm),
+             colour="orange")#draw line where average lies on density
+tagged_distribution
 ```
 
