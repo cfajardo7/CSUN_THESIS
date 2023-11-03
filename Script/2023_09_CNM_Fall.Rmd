@@ -34,6 +34,7 @@ library(vegan)
 #Read in CSV
 ```{r, Read in CSV}
 cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
+cnm_mobiles <- read_csv(here("Data","2023_09_CNM_Mobile_Data.csv"))
 ```
 
 #Simple Statistics
@@ -105,4 +106,34 @@ tagged_distribution <- tagged_limpets %>% #calling data frame with tagged limpet
              colour="orange")#draw line where average lies on density
 tagged_distribution
 ```
+
+#Data Manipulation for Mobile Plots
+```{r, Data Manipulation for Mobile Plots}
+cnm_mobiles$COL_pres <- as.factor(cnm_mobiles$COL_pres)
+cnm_mobiles_long <- cnm_mobiles %>% 
+  pivot_longer(cols = A_lugubris:L_gigantea,
+               names_to = "Species",
+               values_to = "Count") %>% 
+  filter(Count != 0) %>% 
+  group_by(COL_pres) %>% 
+  count(Species) %>% 
+  mutate(Spec_rich = (n/1963.5)*100)
+```
+
+#boxplot of species richness
+```{r,boxplot of species richness}
+cnm_mobiles_long %>% 
+  ggplot(aes(
+    x = COL_pres,
+    y = Spec_rich,
+    fill = COL_pres))+
+  geom_boxplot(show.legend = FALSE)+ 
+  scale_fill_brewer(palette = "Accent")+
+  labs(title = "Species Richness of Mobile Species With or Without Central Limpet",
+       x = "Presence of Central Owl Limpet",
+       y = "Species Richness")
+```
+
+
+
 
