@@ -131,7 +131,7 @@ cnm_mobiles_long <- cnm_mobiles %>%
 cnm_mobiles_long %>% 
   ggplot(aes(
     x = COL_pres,
-    y = Spec_rich,
+    y = n,
     fill = COL_pres))+
   geom_boxplot(show.legend = FALSE)+ 
   scale_fill_brewer(palette = "Accent")+
@@ -166,6 +166,7 @@ model1
 coeffs <- tidy(model1)
 coeffs
 ```
+
 #Permanova of Mobile Species Matrix
 ```{r, Permanova of Mobile Species Matrix}
 cnm_mob_count_mat$COL_pres <- as.factor(cnm_mob_count_mat$COL_pres) #made this coulmn a factor
