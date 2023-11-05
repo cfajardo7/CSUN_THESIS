@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
 #Libraries
 ```{r, Libraries}
 library("rerddap")
-library("tidyverse")
+library(tidyverse)
 library("tidync")
 library("doParallel")
 library(lubridate)
@@ -29,12 +29,16 @@ library(hrbrthemes)
 library(emmeans)
 library(agricolae)
 library(vegan)
+library(performance)
+library(broom)
+library(car)
 ```
 
 #Read in CSV
 ```{r, Read in CSV}
 cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
 cnm_mobiles <- read_csv(here("Data","2023_09_CNM_Mobile_Data.csv"))
+cnm_mob_count_mat <- read_csv(here("Data", "2023_09_CNM_Mobile_Count_Matrix.csv"))
 ```
 
 #Simple Statistics
@@ -109,18 +113,20 @@ tagged_distribution
 
 #Data Manipulation for Mobile Plots
 ```{r, Data Manipulation for Mobile Plots}
-cnm_mobiles$COL_pres <- as.factor(cnm_mobiles$COL_pres)
+cnm_mobiles$COL_pres <- as.factor(cnm_mobiles$COL_pres) #made this coulmn a factor
+cnm_mobiles$COL_pres_TF <- as.factor(cnm_mobiles$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
+cnm_mobiles$Transect<- as.factor(cnm_mobiles$Transect)
 cnm_mobiles_long <- cnm_mobiles %>% 
-  pivot_longer(cols = A_lugubris:L_gigantea,
-               names_to = "Species",
-               values_to = "Count") %>% 
-  filter(Count != 0) %>% 
-  group_by(COL_pres) %>% 
-  count(Species) %>% 
-  mutate(Spec_rich = (n/1963.5)*100)
+  pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
+  filter(Count != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected againts since they had 0 for all species
+  group_by(COL_pres) %>% #group by presence or no presence of owl limpet
+  count(Species) %>% #provide count of each species by group
+  mutate(Spec_rich = (n/1963.5)*100) #create new column with species richness
 ```
 
-#boxplot of species richness
+#Boxplot of species richness
 ```{r,boxplot of species richness}
 cnm_mobiles_long %>% 
   ggplot(aes(
@@ -131,9 +137,120 @@ cnm_mobiles_long %>%
   scale_fill_brewer(palette = "Accent")+
   labs(title = "Species Richness of Mobile Species With or Without Central Limpet",
        x = "Presence of Central Owl Limpet",
-       y = "Species Richness")
+       y = "Species Richness") 
+  
 ```
 
 
+#Permanova of mobile species abundance
+```{r, Permanova of mobile species abundance}
+cnm_mobiles_labels <- cnm_mobiles[,-c(1:7)] %>% #made labels using species names. It didn't work when I add this piece of code to the nMDS plot
+  pivot_longer(cols = A_lugubris:L_gigantea,
+               names_to = "Species",
+               values_to = "Count")
+                   
+cnm_mobiles_sum <- cnm_mobiles%>% #I created a new data frame with the addition of the sum of individuals per species in each plot
+  mutate(Sum = sum(A_lugubris, L_plena, L_limatula, L_scabra, Nuttallina_sp, P_crassipes, T_funebralis, L_gigantea)) %>% 
+  filter(Sum != 0) #model doesn't work if sum column has 0s
 
+cnm_mobiles_sum_pivot <- cnm_mobiles_sum %>% 
+  pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count") %>% 
+  group_by(Plot_Name) %>% 
+  count(Species)
+
+model1<-adonis2(cnm_mobiles_sum[,-c(1:7)]~COL_pres_TF, cnm_mobiles_sum, permutations = 999, 
+                method="bray")
+model1
+coeffs <- tidy(model1)
+coeffs
+```
+#Permanova of Mobile Species Matrix
+```{r, Permanova of Mobile Species Matrix}
+cnm_mob_count_mat$COL_pres <- as.factor(cnm_mob_count_mat$COL_pres) #made this coulmn a factor
+cnm_mob_count_mat$COL_pres_TF <- as.factor(cnm_mob_count_mat$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
+cnm_mob_count_mat$Transect<- as.factor(cnm_mob_count_mat$Transect)
+
+cnm_mob_count_sum <- cnm_mob_count_mat%>% #I created a new data frame with the addition of the sum of counts per species in each plot using a data matrix made up of 0 and 1. 1 represents the occurence of that species in that plot.
+  mutate(Sum = sum(A_lugubris, L_plena, L_limatula, L_scabra, Nuttallina_sp, P_crassipes, T_funebralis, L_gigantea)) %>% 
+  filter(Sum != 0) #permanova did not accept 0
+
+model2<-adonis2(cnm_mob_count_sum[,-c(1:7)]~COL_pres_TF, cnm_mob_count_sum, permutations = 999, method="bray") #independent variable is the presence or absence of limpets
+model2
+```
+
+#nMDS of Mobile Species Abundance in the Presence/Absence of Owl Limpet
+```{r, nMDS of Mobile Species in the Presence/Absence of Owl Limpet}
+disper<-vegdist(cnm_mobiles_sum[,-c(1:7)]) #calculate distance matrix
+cnm_mobile_distmat <- as.matrix(disper, labels = T) #used distance matrix as easy to view matrix
+
+
+cnm_mobile_NMS <-
+  metaMDS(cnm_mobile_distmat,#used metaMDS to make NMS to use in nMDS plot
+          distance = "bray",
+          k = 2,
+          maxit = 999, 
+          trymax = 500,
+          wascores = TRUE)
+cnm_mobile_NMS
+cnm_mobile_NMS$stress
+# Shepards test/goodness of fit
+goodness(cnm_mobile_NMS) # Produces a results of test statistics for goodness of fit for each point
+
+stressplot(cnm_mobile_NMS) # Produces a Shepards diagram
+
+plot(cnm_mobile_NMS, #making nMDS plot, calling the NMS to use in formula
+     ylim=c(-0.04,0.04)) %>% 
+     points(points(cnm_mobile_NMS$points[cnm_mobiles_sum$COL_pres_TF=='TRUE',1],cnm_mobile_NMS$points[cnm_mobiles_sum$COL_pres_TF=='TRUE',2],
+            pch=19, col='pink', cex=2)) %>% 
+            points(points(cnm_mobile_NMS$points[cnm_mobiles_sum$COL_pres_TF=='FALSE',1],cnm_mobile_NMS$points[cnm_mobiles_sum$COL_pres_TF=='FALSE',2], 
+                          pch=19, col='blue', cex=2)) %>% 
+  ordiellipse(cnm_mobile_NMS, groups=cnm_mobiles_sum$COL_pres_TF, display = "sites", kind='ehull', border='black', col=c('blue','pink'), lwd=2, draw ='polygon')
+```
+
+
+#nMDS of Mobile Species Richness in the Presence/Absence of Owl Limpet
+```{r, nMDS of Mobile Species Richness in the Presence/Absence of Owl Limpet}
+disper<-vegdist(cnm_mob_count_sum[,-c(1:7)])#calculate distance matrix
+cnm_mob_count_sum_distmat <- as.matrix(disper, labels = T) #easy to view matrix
+
+
+cnm_mob_count_NMS <-metaMDS(cnm_mob_count_sum_distmat, #used metaMDS to make NMS to use in nMDS plot
+          distance = "bray",
+          k = 2,
+          maxit = 999, 
+          trymax = 500,
+          wascores = TRUE)
+# Shepards test/goodness of fit
+goodness(cnm_mob_count_NMS) # Produces a results of test statistics for goodness of fit for each point
+
+stressplot(cnm_mob_count_NMS) # Produces a Shepards diagram
+
+plot(cnm_mob_count_NMS,
+     ylim=c(-0.02,0.02)) %>% 
+     points(points(cnm_mob_count_NMS$points[cnm_mob_count_sum$COL_pres_TF=='TRUE',1],cnm_mob_count_NMS$points[cnm_mob_count_sum$COL_pres_TF=='TRUE',2],
+            pch=19, col='purple', cex=2)) %>% 
+            points(points(cnm_mob_count_NMS$points[cnm_mob_count_sum$COL_pres_TF=='FALSE',1],cnm_mob_count_NMS$points[cnm_mob_count_sum$COL_pres_TF=='FALSE',2], 
+                          pch=19, col='green', cex=2)) %>% 
+  ordiellipse(cnm_mob_count_NMS, groups=cnm_mob_count_sum$COL_pres_TF, display = "sites", kind='ehull', border='black', col=c('green','purple'), lwd=2, draw ='polygon')
+```
+
+#Linear Regression of Limpet Presence/absence vs total mobile abundance per Transect
+```{r, Linear Regression of Limpet Presence/absence vs total mobile abundance}
+cnm_mobiles_long_2 <- cnm_mobiles %>% 
+  pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
+  filter(Count != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected against since they had 0 for all species
+  group_by(Transect, COL_pres) %>% 
+  count(Species) %>% #provide count of each species by group
+  mutate(Spec_rich = (n/1963.5)*100)
+model_mob_log_reg <- glm(COL_pres~Spec_rich, family = "binomial"(link = "logit"), data = cnm_mobiles_long_2)
+model_mob_log_reg
+Anova(model_mob_log_reg)
+
+library(pscl)
+pR2(model_mob_log_reg)
+```
 
