@@ -186,7 +186,7 @@ cnm_sessile_sum_plot %>%
   ggplot(aes(
     x = COL_pres,
     y = percent_cover,
-    fill = Species))+
+    fill = Transect))+
   geom_boxplot(show.legend = TRUE)+ 
   scale_fill_brewer(palette = "Accent")+
   labs(title = "Percent Cover of Sessile Species in Presence/Absence of Central Limpet",
