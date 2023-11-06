@@ -256,7 +256,7 @@ pR2(model_mob_log_reg)
 ```
 
 #Species Richness 
-```{r}
+```{r, Species Richness}
 cnm_mob_count_mat$COL_pres <- as.factor(cnm_mob_count_mat$COL_pres) #made this coulmn a factor
 cnm_mob_count_mat$COL_pres_TF <- as.factor(cnm_mob_count_mat$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
 cnm_mob_count_mat$Transect<- as.factor(cnm_mob_count_mat$Transect)
@@ -275,7 +275,7 @@ cnm_mob_count_mat_sum <- cnm_mob_count_mat %>%
 
 
 #Species Richness Boxplot
-```{r}
+```{r, Species Richness Boxplot}
 mobile_spec_rich_box <- cnm_mob_count_mat_sum %>% 
   ggplot(aes(
     x = COL_pres,
