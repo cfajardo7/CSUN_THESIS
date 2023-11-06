@@ -126,7 +126,7 @@ cnm_mobiles_long <- cnm_mobiles %>%
   mutate(Spec_rich = (n/1963.5)*100) #create new column with species richness
 ```
 
-#Boxplot of species richness
+#Boxplot of Organism Abundance Per Plot With Or Without
 ```{r,boxplot of species richness}
 cnm_mobiles_long %>% 
   ggplot(aes(
@@ -135,9 +135,9 @@ cnm_mobiles_long %>%
     fill = COL_pres))+
   geom_boxplot(show.legend = FALSE)+ 
   scale_fill_brewer(palette = "Accent")+
-  labs(title = "Species Richness of Mobile Species With or Without Central Limpet",
+  labs(title = "Abundance of Other Mobile Species With or Without Central Limpet",
        x = "Presence of Central Owl Limpet",
-       y = "Species Richness") 
+       y = "Abundance of Other Mobile Species") 
   
 ```
 
@@ -253,5 +253,39 @@ Anova(model_mob_log_reg)
 
 library(pscl)
 pR2(model_mob_log_reg)
+```
+
+#Species Richness 
+```{r}
+cnm_mob_count_mat$COL_pres <- as.factor(cnm_mob_count_mat$COL_pres) #made this coulmn a factor
+cnm_mob_count_mat$COL_pres_TF <- as.factor(cnm_mob_count_mat$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
+cnm_mob_count_mat$Transect<- as.factor(cnm_mob_count_mat$Transect)
+
+cnm_mob_count_mat_long <- cnm_mob_count_mat %>% 
+  pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Values") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
+  filter(Values != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected againts since they had 0 for all species
+  group_by(COL_pres) %>% #group by presence or no presence of owl limpet
+  count(Species)
+
+cnm_mob_count_mat_sum <- cnm_mob_count_mat %>% 
+  mutate(spec_sum = rowSums(across(c(A_lugubris, L_plena, L_limatula, L_scabra, Nuttallina_sp, P_crassipes, T_funebralis, L_gigantea)), na.rm=TRUE))
+```
+
+
+#Species Richness Boxplot
+```{r}
+mobile_spec_rich_box <- cnm_mob_count_mat_sum %>% 
+  ggplot(aes(
+    x = COL_pres,
+    y = spec_sum,
+    fill = COL_pres))+
+  geom_boxplot(show.legend = FALSE)+ 
+  scale_fill_brewer(palette = "Accent")+
+  labs(title = "Species Richness of Mobile Species With or Without Central Limpet",
+       x = "Presence of Central Owl Limpet",
+       y = "Species Richness")
+mobile_spec_rich_box
 ```
 
