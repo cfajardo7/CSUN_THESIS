@@ -148,7 +148,7 @@ cnm_mobiles_sum_spec <- cnm_mobiles %>%
 ```
 
 #Boxplot of Mobile Organism Abundance Per Plot in Presence/Absence of Central Limpet
-```{r,boxplot of species richness}
+```{r,Boxplot of Mobile Organism Abundance Per Plot in Presence/Absence of Central Limpet}
  cnm_mobiles_sum_spec %>% 
   ggplot(aes(
     x = COL_pres,
