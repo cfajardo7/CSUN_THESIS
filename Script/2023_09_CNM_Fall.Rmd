@@ -39,6 +39,8 @@ library(car)
 cnm_shell_length <- read_csv(here("Data","2023_09_CNM_OL_SL_Data.csv"))
 cnm_mobiles <- read_csv(here("Data","2023_09_CNM_Mobile_Data.csv"))
 cnm_mob_count_mat <- read_csv(here("Data", "2023_09_CNM_Mobile_Count_Matrix.csv"))
+cnm_sessile_count_mat <- read_csv(here("Data", "2023_09_CNM_Sessile_Count_Matrix.csv"))
+cnm_sessile <- read_csv(here("Data", "2023_09_CNM_Sessile_Data.csv"))
 ```
 
 #Simple Statistics
@@ -113,32 +115,84 @@ tagged_distribution
 
 #Data Manipulation for Mobile Plots
 ```{r, Data Manipulation for Mobile Plots}
+#Make some columns into factors
 cnm_mobiles$COL_pres <- as.factor(cnm_mobiles$COL_pres) #made this coulmn a factor
 cnm_mobiles$COL_pres_TF <- as.factor(cnm_mobiles$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
 cnm_mobiles$Transect<- as.factor(cnm_mobiles$Transect)
+
+
 cnm_mobiles_long <- cnm_mobiles %>% 
   pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
                names_to = "Species", #all species name in this column
-               values_to = "Count") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
+               values_to = "Count") %>%  #all counts of said species in this column, this can give me a count per species to get species abundance
   filter(Count != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected againts since they had 0 for all species
   group_by(COL_pres) %>% #group by presence or no presence of owl limpet
-  count(Species) %>% #provide count of each species by group
-  mutate(Spec_rich = (n/1963.5)*100) #create new column with species richness
+  count(Species) #provide count of each species by group
+  #mutate(Spec_rich = (n/1963.5)*100) #create new column with species richness
+
+
+cnm_mobiles_long_3 <- cnm_mobiles %>% 
+  pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count") %>%   #all counts of said species in this column, this can give me a count per species to get species abundance
+  #filter(Count != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected againts since they had 0 for all species
+  group_by(Plot_Name) %>% #group by presence or no presence of owl limpet
+  count(Species) #provide count of each species by group
+
+##########THIS IS THE ONE THAT WORKS############
+cnm_mobiles_sum_spec <- cnm_mobiles %>% 
+  mutate(spec_sum = rowSums(across(c(A_lugubris, L_plena, L_limatula, L_scabra, Nuttallina_sp, P_crassipes, T_funebralis, L_gigantea)), na.rm=TRUE)) %>% 
+   pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count")
 ```
 
-#Boxplot of Organism Abundance Per Plot With Or Without
+#Boxplot of Mobile Organism Abundance Per Plot in Presence/Absence of Central Limpet
 ```{r,boxplot of species richness}
-cnm_mobiles_long %>% 
+ cnm_mobiles_sum_spec %>% 
   ggplot(aes(
     x = COL_pres,
-    y = n,
-    fill = COL_pres))+
-  geom_boxplot(show.legend = FALSE)+ 
+    y = spec_sum,
+    fill = Transect))+
+  geom_boxplot(show.legend = TRUE)+ 
   scale_fill_brewer(palette = "Accent")+
-  labs(title = "Abundance of Other Mobile Species With or Without Central Limpet",
+  labs(title = "Abundance of Other Mobile in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
-       y = "Abundance of Other Mobile Species") 
+       y = "Abundance of Other Mobile Organisms") +
+  theme_bw()
   
+```
+
+
+#Sessile Species Abundance Using Percent Cover
+```{r, Sessile Species Abundance}
+#Make columns into factors
+cnm_sessile$COL_pres <- as.factor(cnm_sessile$COL_pres)
+cnm_sessile$COL_pres_TF <- as.factor(cnm_sessile$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
+cnm_sessile$Transect<- as.factor(cnm_sessile$Transect)
+
+cnm_sessile_sum_plot <- cnm_sessile %>% 
+  mutate(spec_sum = rowSums(across(c(A_elegantissima,Chthalmus_sp, Bare_rock, Ralfsia_sp, P_polymerus, Ulva_sp)), na.rm=TRUE))%>% 
+   pivot_longer(cols = A_elegantissima:Ulva_sp, #pivoted to make longer
+               names_to = "Species", #all species name in this column
+               values_to = "Count") %>% 
+  mutate(count_sa = Count/spec_sum) %>% 
+  mutate(percent_cover = count_sa*100)
+```
+
+#Boxplot of Sessile Organism Percent Cover Per Plot in Presence/Absence of Central Limpet
+```{r, Boxplot of Sessile Organism Percent Cover Per Plot in Presence/Absence of Central Limpet}
+cnm_sessile_sum_plot %>% 
+  ggplot(aes(
+    x = COL_pres,
+    y = percent_cover,
+    fill = Species))+
+  geom_boxplot(show.legend = TRUE)+ 
+  scale_fill_brewer(palette = "Accent")+
+  labs(title = "Percent Cover of Sessile Species in Presence/Absence of Central Limpet",
+       x = "Presence of Central Owl Limpet",
+       y = "Percent Cover") +
+  theme_bw()
 ```
 
 
@@ -245,18 +299,33 @@ cnm_mobiles_long_2 <- cnm_mobiles %>%
                values_to = "Count") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
   filter(Count != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected against since they had 0 for all species
   group_by(Transect, COL_pres) %>% 
-  count(Species) %>% #provide count of each species by group
-  mutate(Spec_rich = (n/1963.5)*100)
-model_mob_log_reg <- glm(COL_pres~Spec_rich, family = "binomial"(link = "logit"), data = cnm_mobiles_long_2)
-model_mob_log_reg
-Anova(model_mob_log_reg)
+  count(Species)# %>% #provide count of each species by group
+  #mutate(Spec_rich = (n/1963.5)*100)
+model_mob_lin_reg <- glm(COL_pres~n, family = "binomial"(link = "logit"), data = cnm_mobiles_long_2)
+model_mob_lin_reg
+Anova(model_mob_lin_reg)
 
 library(pscl)
-pR2(model_mob_log_reg)
+pR2(model_mob_lin_reg)
+
+
+#########MIGHT GO WITH THIS ONE###############
+model2_mob_lin_reg <- glm(COL_pres~spec_sum, family = "binomial"(link = "logit"), data = cnm_mobiles_sum_spec)
+model2_mob_lin_reg
+Anova(model2_mob_lin_reg)
+pR2(model2_mob_lin_reg)
 ```
 
-#Species Richness 
-```{r, Species Richness}
+#Linear Regression of Sessile Percent Cover vs Presence/absence of Owl limpet
+```{r, Linear Regression of Sessile Percent Cover vs Presence/absence of Owl limpet}
+model1_sessile_lin_reg <- glm(COL_pres~Count, family = "binomial"(link = "logit"), data = cnm_sessile_sum_plot)
+model1_sessile_lin_reg
+Anova(model1_sessile_lin_reg)
+```
+
+
+#Species Richness of Mobiles
+```{r, Species Richness of Mobiles}
 cnm_mob_count_mat$COL_pres <- as.factor(cnm_mob_count_mat$COL_pres) #made this coulmn a factor
 cnm_mob_count_mat$COL_pres_TF <- as.factor(cnm_mob_count_mat$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
 cnm_mob_count_mat$Transect<- as.factor(cnm_mob_count_mat$Transect)
@@ -274,18 +343,79 @@ cnm_mob_count_mat_sum <- cnm_mob_count_mat %>%
 ```
 
 
-#Species Richness Boxplot
-```{r, Species Richness Boxplot}
+#Species Richness of Mobiles Boxplot
+```{r, Species Richness of Mobiles Boxplot}
 mobile_spec_rich_box <- cnm_mob_count_mat_sum %>% 
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
     fill = COL_pres))+
   geom_boxplot(show.legend = FALSE)+ 
-  scale_fill_brewer(palette = "Accent")+
-  labs(title = "Species Richness of Mobile Species With or Without Central Limpet",
+  scale_fill_brewer(palette = "Dark2")+
+  labs(title = "Species Richness of Mobile Species in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
        y = "Species Richness")
 mobile_spec_rich_box
+```
+
+
+#ttest For Mobile Species Richness
+```{r, ttest For Mobile Species Richness}
+log_cnm_mob_count_mat <- cnm_mob_count_mat_sum %>% 
+  mutate(spec_sum_add1 = spec_sum+1) %>% #adding a constant so I can eliminate the 0 i data
+  mutate(log_spec_sum_add1 = log(spec_sum_add1)) #transforming data with log fxn
+qqp(log_cnm_mob_count_mat$log_spec_sum_add1, "norm") #test for normality, the zero's aren't falling within normality test
+shapiro.test(log_cnm_mob_count_mat$log_spec_sum_add1) #shapriro test shows low p value
+mob_t_test <- t.test(log_spec_sum_add1~COL_pres, data = log_cnm_mob_count_mat)
+mob_t_test
+```
+
+
+#Sessile Species Richnnes Data Manipulation 
+```{r, Sessile Species Richnnes Data Manipulation}
+cnm_sessile_count_mat 
+cnm_sessile_count_mat$COL_pres <- as.factor(cnm_sessile_count_mat$COL_pres) #made this coulmn a factor
+#cnm_sessile_count_mat$COL_pres_TF <- as.factor(cnm_sessile_count_mat$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
+cnm_sessile_count_mat$Transect<- as.factor(cnm_sessile_count_mat$Transect)
+
+#cnm_sessile_count_mat_long <- cnm_sessile_count_mat %>% 
+  #pivot_longer(cols = A_lugubris:L_gigantea, #pivoted to make longer
+               #names_to = "Species", #all species name in this column
+               #values_to = "Values") %>%  #all counts of said species in this column, this can give me a count per species to get species richness
+  #filter(Values != 0) %>% #take out any rows that have a count of 0, R was giving me problems. Some plots were selected againts since they had 0 for all species
+ # group_by(COL_pres) %>% #group by presence or no presence of owl limpet
+  #count(Species)
+
+#Using this one
+  cnm_sessile_count_mat_sum <- cnm_sessile_count_mat %>% 
+  mutate(spec_sum = rowSums(across(c(A_elegantissima,Chthalmus_sp, Bare_rock, Ralfsia_sp, P_polymerus, Ulva_sp)), na.rm=TRUE))
+```
+
+#Boxplot of Sessile Species Richness
+```{r, Boxplot of Sessile Species Richness}
+sessile_spec_rich_box <- cnm_sessile_count_mat_sum %>% 
+  ggplot(aes(
+    x = COL_pres,
+    y = spec_sum,
+    fill = COL_pres))+
+  geom_boxplot(show.legend = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  labs(title = "Species Richness of Sessile Species in The Presence/Absence of Owl Limpet",
+       x = "Presence of Central Owl Limpet",
+       y = "Species Richness")+
+    geom_jitter(color = "purple", size=0.9, alpha=0.9, show.legend = (FALSE))+
+  theme_bw()
+sessile_spec_rich_box
+```
+
+#Species Richness of Sessile Welchs T test
+```{r, Species Richness of Sessile Welchs T test}
+log_cnm_sessile_count_mat <- cnm_sessile_count_mat_sum %>% 
+  mutate(spec_sum_add1 = spec_sum+1) %>% #adding a constant so I can eliminate the 0 i data
+  mutate(log_spec_sum_add1 = log(spec_sum_add1)) #transforming data with log fxn
+qqp(log_cnm_sessile_count_mat$log_spec_sum_add1, "norm") #test for normality, the zero's aren't falling within normality test
+shapiro.test(log_cnm_sessile_count_mat$log_spec_sum_add1) #shapriro test shows low p value
+sessile_t_test <- t.test(log_spec_sum_add1~COL_pres, data = log_cnm_sessile_count_mat)
+sessile_t_test
 ```
 
