@@ -156,7 +156,7 @@ cnm_mobiles_sum_spec <- cnm_mobiles %>%
     fill = Transect))+
   geom_boxplot(show.legend = TRUE)+ 
   scale_fill_brewer(palette = "Accent")+
-  labs(title = "Abundance of Other Mobile in Presence/Absence of Central Limpet",
+  labs(title = "Abundance of Other Mobile Species in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
        y = "Abundance of Other Mobile Organisms") +
   theme_bw()
@@ -349,8 +349,8 @@ mobile_spec_rich_box <- cnm_mob_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = COL_pres))+
-  geom_boxplot(show.legend = FALSE)+ 
+    fill = Transect))+
+  geom_boxplot(show.legend = TRUE)+ 
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Species Richness of Mobile Species in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
@@ -397,8 +397,8 @@ sessile_spec_rich_box <- cnm_sessile_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = COL_pres))+
-  geom_boxplot(show.legend = FALSE)+
+    fill = Transect))+
+  geom_boxplot(show.legend = TRUE)+
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Species Richness of Sessile Species in The Presence/Absence of Owl Limpet",
        x = "Presence of Central Owl Limpet",
