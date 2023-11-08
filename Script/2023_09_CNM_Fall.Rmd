@@ -32,6 +32,8 @@ library(vegan)
 library(performance)
 library(broom)
 library(car)
+library(lme4)
+library(lmerTest)
 ```
 
 #Read in CSV
@@ -153,9 +155,9 @@ cnm_mobiles_sum_spec <- cnm_mobiles %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
-  geom_boxplot(show.legend = TRUE)+ 
-  scale_fill_brewer(palette = "Accent")+
+    fill = COL_pres_TF))+
+  geom_boxplot(show.legend = FALSE)+ 
+  scale_fill_brewer(palette = "Dark2")+
   labs(title = "Abundance of Other Mobile Species in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
        y = "Abundance of Other Mobile Organisms") +
@@ -171,24 +173,25 @@ cnm_sessile$COL_pres <- as.factor(cnm_sessile$COL_pres)
 cnm_sessile$COL_pres_TF <- as.factor(cnm_sessile$COL_pres_TF) #made this coulmn a factor THIS IMPORTANT FOR nMDS
 cnm_sessile$Transect<- as.factor(cnm_sessile$Transect)
 
-cnm_sessile_sum_plot <- cnm_sessile %>% 
+
+cnm_sessile_sum_plot <- cnm_sessile %>%
   mutate(spec_sum = rowSums(across(c(A_elegantissima,Chthalmus_sp, Bare_rock, Ralfsia_sp, P_polymerus, Ulva_sp)), na.rm=TRUE))%>% 
-   pivot_longer(cols = A_elegantissima:Ulva_sp, #pivoted to make longer
-               names_to = "Species", #all species name in this column
-               values_to = "Count") %>% 
-  mutate(count_sa = Count/spec_sum) %>% 
-  mutate(percent_cover = count_sa*100)
+  mutate(percent_animal = (A_elegantissima+ Chthalmus_sp+ P_polymerus)/spec_sum*100,
+         percent_algae = (Ralfsia_sp+Ulva_sp)/spec_sum*100)
+
 ```
 
 #Boxplot of Sessile Organism Percent Cover Per Plot in Presence/Absence of Central Limpet
 ```{r, Boxplot of Sessile Organism Percent Cover Per Plot in Presence/Absence of Central Limpet}
 cnm_sessile_sum_plot %>% 
+  pivot_longer(cols = c(percent_animal, percent_algae), names_to = "percent_type")%>%
   ggplot(aes(
     x = COL_pres,
-    y = percent_cover,
-    fill = Transect))+
+    y = value,
+    fill = COL_pres,
+    alpha = percent_type))+
   geom_boxplot(show.legend = TRUE)+ 
-  scale_fill_brewer(palette = "Accent")+
+  scale_fill_brewer(palette = "Dark2")+
   labs(title = "Percent Cover of Sessile Species in Presence/Absence of Central Limpet",
        x = "Presence of Central Owl Limpet",
        y = "Percent Cover") +
@@ -310,18 +313,32 @@ pR2(model_mob_lin_reg)
 
 
 #########MIGHT GO WITH THIS ONE###############
-model2_mob_lin_reg <- glm(COL_pres~spec_sum, family = "binomial"(link = "logit"), data = cnm_mobiles_sum_spec)
+model2_mob_lin_reg <- glm(spec_sum~COL_pres_TF, family = "binomial"(link = "logit"), data = cnm_mobiles_sum_spec)
 model2_mob_lin_reg
 Anova(model2_mob_lin_reg)
 pR2(model2_mob_lin_reg)
+
+#####LMER#####
+model3_mob_abun <- lmer(spec_sum~COL_pres+(1|Transect), data = cnm_mobiles_sum_spec)
+anova(model3_mob_abun)
+summary(model3_mob_abun)
 ```
 
-#Linear Regression of Sessile Percent Cover vs Presence/absence of Owl limpet
+#LMER Sessile Percent Cover vs Presence/absence of Owl limpet
 ```{r, Linear Regression of Sessile Percent Cover vs Presence/absence of Owl limpet}
-model1_sessile_lin_reg <- glm(COL_pres~Count, family = "binomial"(link = "logit"), data = cnm_sessile_sum_plot)
+#cnm_sessile_sum_plot$percent_animal <- as.factor(cnm_sessile_sum_plot$Count)
+model1_sessile_lin_reg <- glm(Count~COL_pres, family = "binomial"(link = "logit"), data = cnm_sessile_sum_plot)
 model1_sessile_lin_reg
 Anova(model1_sessile_lin_reg)
 pR2(model1_sessile_lin_reg)
+
+model5_sess_an_abun <- lmer(percent_animal~COL_pres+(1|Transect), data = cnm_sessile_sum_plot)
+anova(model5_sess_an_abun)
+summary(model5_sess_an_abun)
+
+model6_sess_al_abun <- lmer(percent_algae~COL_pres+(1|Transect), data = cnm_sessile_sum_plot)
+anova(model6_sess_al_abun)
+summary(model6_sess_al_abun)
 ```
 
 
@@ -339,6 +356,7 @@ cnm_mob_count_mat_long <- cnm_mob_count_mat %>%
   group_by(COL_pres) %>% #group by presence or no presence of owl limpet
   count(Species)
 
+#USE THIS ONE
 cnm_mob_count_mat_sum <- cnm_mob_count_mat %>% 
   mutate(spec_sum = rowSums(across(c(A_lugubris, L_plena, L_limatula, L_scabra, Nuttallina_sp, P_crassipes, T_funebralis, L_gigantea)), na.rm=TRUE))
 ```
@@ -350,7 +368,7 @@ mobile_spec_rich_box <- cnm_mob_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
+    fill = COL_pres))+
   geom_boxplot(show.legend = TRUE)+ 
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Species Richness of Mobile Species in Presence/Absence of Central Limpet",
@@ -361,7 +379,7 @@ mobile_spec_rich_box
 ```
 
 
-#ttest For Mobile Species Richness
+#LMER For Mobile Species Richness
 ```{r, ttest For Mobile Species Richness}
 log_cnm_mob_count_mat <- cnm_mob_count_mat_sum %>% 
   mutate(spec_sum_add1 = spec_sum+1) %>% #adding a constant so I can eliminate the 0 i data
@@ -370,6 +388,11 @@ qqp(log_cnm_mob_count_mat$log_spec_sum_add1, "norm") #test for normality, the ze
 shapiro.test(log_cnm_mob_count_mat$log_spec_sum_add1) #shapriro test shows low p value
 mob_t_test <- t.test(log_spec_sum_add1~COL_pres, data = log_cnm_mob_count_mat)
 mob_t_test
+
+#lmer
+model4_mob_rich <- lmer(spec_sum~COL_pres+(1|Transect), data = cnm_mob_count_mat_sum)
+anova(model4_mob_rich)
+summary(model4_mob_rich)
 ```
 
 
@@ -390,7 +413,8 @@ cnm_sessile_count_mat$Transect<- as.factor(cnm_sessile_count_mat$Transect)
 
 #Using this one
   cnm_sessile_count_mat_sum <- cnm_sessile_count_mat %>% 
-  mutate(spec_sum = rowSums(across(c(A_elegantissima,Chthalmus_sp, Bare_rock, Ralfsia_sp, P_polymerus, Ulva_sp)), na.rm=TRUE))
+    select(Transect, Plot_Name, L_R, Meter_no, COL_pres, Tag_ID, A_elegantissima, Chthalmus_sp, Ralfsia_sp, P_polymerus, Ulva_sp ) %>% 
+  mutate(spec_sum = rowSums(across(c(A_elegantissima,Chthalmus_sp, Ralfsia_sp, P_polymerus, Ulva_sp)), na.rm=TRUE))
 ```
 
 #Boxplot of Sessile Species Richness
@@ -399,13 +423,12 @@ sessile_spec_rich_box <- cnm_sessile_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
-  geom_boxplot(show.legend = TRUE)+
+    fill = COL_pres))+
+  geom_boxplot(show.legend = FALSE)+
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Species Richness of Sessile Species in The Presence/Absence of Owl Limpet",
        x = "Presence of Central Owl Limpet",
        y = "Species Richness")+
-    geom_jitter(color = "purple", size=0.9, alpha=0.9, show.legend = (FALSE))+
   theme_bw()
 sessile_spec_rich_box
 ```
@@ -419,6 +442,10 @@ qqp(log_cnm_sessile_count_mat$log_spec_sum_add1, "norm") #test for normality, th
 shapiro.test(log_cnm_sessile_count_mat$log_spec_sum_add1) #shapriro test shows low p value
 sessile_t_test <- t.test(log_spec_sum_add1~COL_pres, data = log_cnm_sessile_count_mat)
 sessile_t_test
+
+model5_sess_rich <- lmer(percent_animal~COL_pres+(1|Transect), data = cnm_sessile_sum_plot)
+anova(model4_mob_rich)
+summary(model4_mob_rich)
 ```
 
 #Patchwork of species richness for mobiles and sessile
@@ -427,11 +454,11 @@ mobile_spec_rich_box_nolab <- cnm_mob_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
+    fill = COL_pres))+
   geom_boxplot(show.legend = FALSE)+ 
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Mobiles",
-       x = "Presence of Central Owl Limpet",
+       x = "Presence/Absence",
        y = "Species Richness")+
   theme_bw()
 
@@ -439,13 +466,12 @@ sessile_spec_rich_nolab <- cnm_sessile_count_mat_sum %>%
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
-  geom_boxplot(show.legend = TRUE)+
+    fill = COL_pres))+
+  geom_boxplot(show.legend = FALSE)+
   scale_fill_brewer(palette = "Dark2")+
   labs(title = "Sessile",
-       x = "Presence of Central Owl Limpet",
+       x = "Presence/Absence",
        y = "Species Richness")+
-    geom_jitter(color = "purple", size=0.9, alpha=0.9, show.legend = (FALSE))+
   theme_bw()
 
 
@@ -460,27 +486,29 @@ mobile_spec_rich_box_nolab+sessile_spec_rich_nolab+
   ggplot(aes(
     x = COL_pres,
     y = spec_sum,
-    fill = Transect))+
+    fill = COL_pres))+
   geom_boxplot(show.legend = FALSE)+ 
-  scale_fill_brewer(palette = "Accent")+
+  scale_fill_brewer(palette = "Dark2")+
   labs(title = "Abundance of Mobile Species",
        x = "Presence of Central Owl Limpet",
        y = "Abundance of Other Mobile Organisms") +
   theme_bw()
 
 patch_sess <- cnm_sessile_sum_plot %>% 
+  pivot_longer(cols = c(percent_animal, percent_algae), names_to = "percent_type")%>%
   ggplot(aes(
     x = COL_pres,
-    y = percent_cover,
-    fill = Transect))+
+    y = value,
+    fill = COL_pres,
+    alpha = percent_type))+
   geom_boxplot(show.legend = TRUE)+ 
-  scale_fill_brewer(palette = "Accent")+
+  scale_fill_brewer(palette = "Dark2")+
   labs(title = "Percent Cover of Sessile Species",
        x = "Presence of Central Owl Limpet",
        y = "Percent Cover") +
   theme_bw()
 
 patch_mob+patch_sess+
-  plot_annotation(title = 'Total Aundance of Mobiles Species and Percent Cover of Sessile Species in the Presence/Absence of Owl Limpets', theme = theme(plot.title = element_text(size = 15)))
+  plot_annotation(title = 'Total Aundance of Mobiles Species and Percent Cover of Sessile Species in the Presence/Absence of Owl Limpets', theme = theme(plot.title = element_text(size = 12)))
 ```
 
