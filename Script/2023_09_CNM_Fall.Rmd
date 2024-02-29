@@ -312,7 +312,7 @@ library(pscl)
 pR2(model_mob_lin_reg)
 
 
-#########MIGHT GO WITH THIS ONE###############
+#########MIGHT GO WITH THIS ONE############### Doesn't work
 model2_mob_lin_reg <- glm(spec_sum~COL_pres_TF, family = "binomial"(link = "logit"), data = cnm_mobiles_sum_spec)
 model2_mob_lin_reg
 Anova(model2_mob_lin_reg)
@@ -332,11 +332,13 @@ model1_sessile_lin_reg
 Anova(model1_sessile_lin_reg)
 pR2(model1_sessile_lin_reg)
 
-model5_sess_an_abun <- lmer(percent_animal~COL_pres+(1|Transect), data = cnm_sessile_sum_plot)
+model5_sess_an_abun <- lmer(percent_animal~COL_pres+(1|Transect), data = #lmer of animals 
+                              cnm_sessile_sum_plot)
 anova(model5_sess_an_abun)
 summary(model5_sess_an_abun)
 
-model6_sess_al_abun <- lmer(percent_algae~COL_pres+(1|Transect), data = cnm_sessile_sum_plot)
+model6_sess_al_abun <- lmer(percent_algae~COL_pres+(1|Transect), data = #lmer of algae
+                              cnm_sessile_sum_plot)
 anova(model6_sess_al_abun)
 summary(model6_sess_al_abun)
 ```
