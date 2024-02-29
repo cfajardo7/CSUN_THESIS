@@ -1,0 +1,120 @@
+---
+title: "2024_02_CNM_Winter"
+author: "Cindy Fajardo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.path = "../Output/")
+```
+
+#Libraries
+```{r, Libraries}
+library("rerddap")
+library(tidyverse)
+library("tidync")
+library("doParallel")
+library(lubridate)
+library(patchwork)
+library(viridis)
+library(here)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+library(emmeans)
+library(agricolae)
+library(vegan)
+library(performance)
+library(broom)
+library(car)
+library(lme4)
+library(lmerTest)
+```
+
+#Read in CSV
+```{r, Read in CSV}
+cnm_shell_length_1 <- read_csv(here("Data","2024_02_CNM_OL_SL_Data.csv"))
+cnm_mobiles_1 <- read_csv(here("Data","2024_02_CNM_Mobile_Data.csv"))
+cnm_sessile_1 <- read_csv(here("Data", "2024_02_CNM_Sessile_Data.csv"))
+```
+
+#Simple Statistics
+```{r, Simple Statistics}
+mean(cnm_shell_length_1$SL_mm)
+max(cnm_shell_length_1$SL_mm)
+min(cnm_shell_length_1$SL_mm)
+```
+#Density
+```{r, Density}
+cnm_area_1 <- 140 # area (m^2) that I surveyed at Cabrillo National Monument Zone 3
+feb_cnm_total_limpets <- nrow(cnm_shell_length_1)
+feb_pop_density_cnm <- feb_cnm_total_limpets/cnm_area_1 #calculate population density # of limpet/m^2
+```
+
+#Population Shell Length Distribution Graph
+```{r, Population Shell Length Distribution Graph}
+feb_cnm_pop_density <- cnm_shell_length_1 %>% #calling csv with shell length data
+  select(Limpet_No, SL_mm) %>% #selecting limpet number to count and shell length
+  ggplot( aes(x=SL_mm)) + #Sl on x, I am not selecting y so R can use limpet count for density plot
+  geom_bar(fill="blue",#color of bars
+           colour="black",#color of bar outline
+           alpha= 1,#transparency of bar
+           width = 1) + #size of bars
+  labs(title = "Size Distribution of Owl Limpet Population, Cabrillo National Monument",
+       x = "Shell Length (mm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 15),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
+  scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
+  geom_vline(xintercept = mean(cnm_shell_length_1$SL_mm),
+             colour="green")#draw line where average lies on density
+ feb_cnm_pop_density
+```
+
+#Size Distribution of Tagged Limpets
+```{r, Size Distribution of Tagged Limpets}
+feb_tagged_limpets <- cnm_shell_length_1 %>% #named new data frame using shell length data
+  filter(Tag_ID != 0) #filtered out non-tagged limpets
+feb_tagged_limpets #calling data frame
+mean(feb_tagged_limpets$SL_mm)
+```
+
+#Tagged Limpets Shell Length Distribution Graph
+```{r, #Tagged Limpets Shell Length Distribution Graph}
+feb_tagged_distribution <- feb_tagged_limpets %>% #calling data frame with tagged limpets only
+  select(Limpet_No, SL_mm) %>% #selecting limpet number to count and shell length
+  ggplot( aes(x=SL_mm)) + #Sl on x, I am not selecting y so R can use limpet count for density plot
+  geom_bar(fill="red",#color of bars
+           colour="black",#color of bar outline
+           alpha= 1,#transparency of bar
+           width = 1) + #size of bars
+  labs(title = "Size Distribution of Tagged Owl Limpets, Cabrillo National Monument",
+       x = "Shell Length (mm)",
+       y = "Owl Limpet Count")+
+  theme(plot.title = element_text(size = 9),
+        axis.title.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))+
+  scale_y_continuous(breaks = c(0,2,4,6,8,10))+ #lines I want to show up on y axis
+  scale_x_continuous(breaks = c(10,20,30,40,50,60,70,80))+ #lines I want to show up on x axis
+  geom_vline(xintercept = mean(tagged_limpets$SL_mm),
+             colour="green")#draw line where average lies on density
+feb_tagged_distribution
+```
+
+#Total number of tagged limpets
+```{r, Total number of tagged limpets}
+feb_tagged_limpets %>%
+  group_by(Plot_Name) %>% 
+  count(Tag_ID)
+```
+
