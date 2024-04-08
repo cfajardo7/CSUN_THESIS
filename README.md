@@ -4,6 +4,7 @@ Thank you for joining my masters thesis repo! Here you will find all of the madn
 1. [Data](https://github.com/cfajardo7/CSUN_THESIS/tree/main/Data)
 2. [Output](https://github.com/cfajardo7/CSUN_THESIS/tree/main/Output)
 3. [Script](https://github.com/cfajardo7/CSUN_THESIS/tree/main/Script)
+
 The **Data** folder holds all of the CSV sheets that I created using excel where you can find all my RAW data. I also have csv sheets that I created in R.
 The **Output** folder holds all and any output that is made in R. That can include any graphs that were made in R.
 The **Script** folder hold all of the different scripts I have made and are currently working on. If you would like to download and use my script, please feel free to do so. I just ask that you don't PUSH anything through as these scripts are my work that I have cried and bled for (figuratively speaking of course).
