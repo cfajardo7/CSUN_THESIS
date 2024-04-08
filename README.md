@@ -8,4 +8,4 @@ The **Data** folder holds all of the CSV sheets that I created using excel where
 The **Output** folder holds all and any output that is made in R. That can include any graphs that were made in R.
 The **Script** folder hold all of the different scripts I have made and are currently working on. If you would like to download and use my script, please feel free to do so. I just ask that you don't PUSH anything through as these scripts are my work that I have cried and bled for (figuratively speaking of course).
 Feel free to browse through. I hope anything here is of some use to you!
-![strongertogether](https://www.google.com/imgres?q=stonger%20together&imgurl=https%3A%2F%2Fas1.ftcdn.net%2Fv2%2Fjpg%2F03%2F55%2F27%2F72%2F1000_F_355277206_PNuZJYuKrlW0KxZMsoQslIGvkgJWTJRi.jpg&imgrefurl=https%3A%2F%2Fstock.adobe.com%2Fimages%2Fhand-drawn-vector-lettering-stronger-together-strong-team-support-message-for-social-teamwork-campaign-or-united-human-rights-group-vector-illustration%2F355277206&docid=6t3vvzl9WXtkZM&tbnid=6mpZBiHQWBTLqM&vet=12ahUKEwi3wJ2kwLOFAxW2JUQIHXYwBhgQM3oECGYQAA..i&w=1000&h=1000&hcb=2&ved=2ahUKEwi3wJ2kwLOFAxW2JUQIHXYwBhgQM3oECGYQAA)
+
